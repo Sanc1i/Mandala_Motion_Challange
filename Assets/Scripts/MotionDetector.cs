@@ -22,30 +22,26 @@ public class MotionDetector : MonoBehaviour
 
     void Update()
     {
+        // 1. Calculate velocity ONCE
         Vector3 velocity = (transform.position - _lastPosition) / Time.deltaTime;
         _currentSpeed = velocity.magnitude;
-        _lastPosition = transform.position;
+        _lastPosition = transform.position; // Update last position after calc
 
-        // Report movement to overwhelm detector
+        // 2. Report to OverwhelmDetector
         if (_overwhelmDetector != null && _currentSpeed > 0.1f)
         {
             _overwhelmDetector.RecordMovement(velocity);
         }
-        // Calculate velocity manually (more reliable across SDKs)
-        _currentSpeed = (transform.position - _lastPosition).magnitude / Time.deltaTime;
-        _lastPosition = transform.position;
 
-        // LOGIC: If moving fast enough AND inside the rhythm window
+        // 3. Check Threshold logic
         if (_currentSpeed > movementThreshold)
         {
             if (rhythmManager.IsBeatWindow)
             {
-                // Perfect hit
                 mandalaController.ProcessPlayerInput(true);
             }
             else
             {
-                // Moving off-beat (Neutral/Negative feedback logic)
                 mandalaController.ProcessPlayerInput(false);
             }
         }

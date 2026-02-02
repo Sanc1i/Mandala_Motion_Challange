@@ -46,6 +46,8 @@ public class RhythmManager : MonoBehaviour
         IsBeatWindow = false;
     }
 
+    public float baseTrackBPM = 60f;
+
     public void UpdateBPM(float newBpm)
     {
         bpm = Mathf.Clamp(newBpm, 50f, 120f);
@@ -54,7 +56,7 @@ public class RhythmManager : MonoBehaviour
         // Adjust background music pitch slightly (subtle tempo change)
         if (backgroundMusic != null)
         {
-            backgroundMusic.pitch = Mathf.Lerp(0.95f, 1.1f, (bpm - 50f) / 70f);
+            backgroundMusic.pitch = bpm / baseTrackBPM;
         }
     }
 }

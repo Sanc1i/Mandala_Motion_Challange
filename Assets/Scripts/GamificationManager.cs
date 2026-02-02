@@ -33,6 +33,7 @@ public class GamificationManager : MonoBehaviour
 
     void InitializeBadges()
     {
+        if (badges.Count > 0) return;
         // Create default badges
         badges.Add(new Badge { badgeName = "First Steps", unlocked = false });
         badges.Add(new Badge { badgeName = "Rhythm Master", unlocked = false });
