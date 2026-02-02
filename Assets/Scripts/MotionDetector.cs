@@ -13,8 +13,24 @@ public class MotionDetector : MonoBehaviour
     private Vector3 _lastPosition;
     private float _currentSpeed;
 
+   private OverwhelmDetector _overwhelmDetector;
+
+    void Start()
+    {
+        _overwhelmDetector = FindObjectOfType<OverwhelmDetector>();
+    }
+
     void Update()
     {
+        Vector3 velocity = (transform.position - _lastPosition) / Time.deltaTime;
+        _currentSpeed = velocity.magnitude;
+        _lastPosition = transform.position;
+
+        // Report movement to overwhelm detector
+        if (_overwhelmDetector != null && _currentSpeed > 0.1f)
+        {
+            _overwhelmDetector.RecordMovement(velocity);
+        }
         // Calculate velocity manually (more reliable across SDKs)
         _currentSpeed = (transform.position - _lastPosition).magnitude / Time.deltaTime;
         _lastPosition = transform.position;
