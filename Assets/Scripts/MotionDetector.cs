@@ -5,36 +5,45 @@ public class MotionDetector : MonoBehaviour
 {
     [Header("References")]
     public RhythmManager rhythmManager;
-    public MandalaController mandalaController; // Reference to the script below
+    public MandalaController mandalaController;
+    public OverwhelmDetector overwhelmDetector;
 
-    [Header("Sensitivity")]
-    public float movementThreshold = 0.5f; // How fast they must move
-    
-    private Vector3 _lastPosition;
-    private float _currentSpeed;
+    [Header("Tuning (Agitation Meter)")]
+    public float activeThreshold = 2.0f;
 
-   private OverwhelmDetector _overwhelmDetector;
+    private Vector3 _lastLocalPos;
+    private Quaternion _lastLocalRot;
+    private float _currentIntensity;
 
     void Start()
     {
-        _overwhelmDetector = FindObjectOfType<OverwhelmDetector>();
+        _lastLocalPos = transform.localPosition;
+        _lastLocalRot = transform.localRotation;
+
+        if (overwhelmDetector == null)
+            overwhelmDetector = FindObjectOfType<OverwhelmDetector>();
     }
 
     void Update()
     {
-        // 1. Calculate velocity ONCE
-        Vector3 velocity = (transform.position - _lastPosition) / Time.deltaTime;
-        _currentSpeed = velocity.magnitude;
-        _lastPosition = transform.position; // Update last position after calc
+        float linearSpeed = Vector3.Distance(transform.localPosition, _lastLocalPos) / Time.deltaTime;
 
-        // 2. Report to OverwhelmDetector
-        if (_overwhelmDetector != null && _currentSpeed > 0.1f)
+        float angleChange = Quaternion.Angle(transform.localRotation, _lastLocalRot);
+        float angularSpeed = angleChange / Time.deltaTime;
+
+        _currentIntensity = (linearSpeed * 2.0f) + (angularSpeed * 0.1f);
+
+        _lastLocalPos = transform.localPosition;
+        _lastLocalRot = transform.localRotation;
+
+        if (overwhelmDetector != null)
         {
-            _overwhelmDetector.RecordMovement(velocity);
+            overwhelmDetector.ProcessMotion(_currentIntensity);
+
+            if (overwhelmDetector.IsOverwhelmed) return;
         }
 
-        // 3. Check Threshold logic
-        if (_currentSpeed > movementThreshold)
+        if (_currentIntensity > activeThreshold)
         {
             if (rhythmManager.IsBeatWindow)
             {

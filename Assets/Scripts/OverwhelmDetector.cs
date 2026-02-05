@@ -3,137 +3,81 @@ using UnityEngine.Events;
 
 public class OverwhelmDetector : MonoBehaviour
 {
-    [Header("Detection Parameters")]
-    public float rapidMovementThreshold = 3f;    // movements per second
-    public float pauseThreshold = 8f;            // seconds of no movement
-    public float erraticMovementThreshold = 0.8f; // variance in movement direction
-    
+    [Header("Tuning")]
+    public float jerkyThreshold = 15.0f;
+
+    public float timeUntilOverwhelmed = 2.5f;
+
+    public float recoveryTimeNeeded = 3.0f;
+
     [Header("Events")]
     public UnityEvent onOverwhelmDetected;
     public UnityEvent onCalmRestored;
 
-    private bool _isOverwhelmed = false;
-    private float _lastMovementTime;
-    private float _pauseDuration;
-    private int _movementCount;
-    private float _movementTimer;
-    private Vector3[] _recentMovements = new Vector3[10];
-    private int _movementIndex = 0;
+    public bool IsOverwhelmed { get; private set; } = false;
 
-    void Update()
+    private float _jerkyTimer = 0f;
+    private float _calmTimer = 0f;
+
+    public void ProcessMotion(float intensity)
     {
-        DetectPauses();
-        DetectErraticMovement();
-        ResetMovementCounter();
-    }
-
-    public void RecordMovement(Vector3 velocity)
-    {
-        _lastMovementTime = Time.time;
-        _movementCount++;
-        
-        // Store recent movement directions
-        _recentMovements[_movementIndex] = velocity.normalized;
-        _movementIndex = (_movementIndex + 1) % _recentMovements.Length;
-    }
-
-    void DetectPauses()
-    {
-        _pauseDuration = Time.time - _lastMovementTime;
-
-        if (_pauseDuration > pauseThreshold && !_isOverwhelmed)
+        if (IsOverwhelmed)
         {
-            TriggerOverwhelm("Extended pause detected");
+            MonitorRecovery(intensity);
+        }
+        else
+        {
+            MonitorStress(intensity);
         }
     }
 
-    void DetectErraticMovement()
+    void MonitorStress(float intensity)
     {
-        // Calculate variance in movement directions
-        float variance = CalculateDirectionVariance();
-
-        if (variance > erraticMovementThreshold && !_isOverwhelmed)
+        if (intensity > jerkyThreshold)
         {
-            TriggerOverwhelm("Erratic movement detected");
-        }
-    }
+            _jerkyTimer += Time.deltaTime;
 
-    void ResetMovementCounter()
-    {
-        _movementTimer += Time.deltaTime;
-        
-        if (_movementTimer >= 1f)
-        {
-            // Check movements per second
-            if (_movementCount > rapidMovementThreshold * 1f && !_isOverwhelmed)
+            if (_jerkyTimer > timeUntilOverwhelmed)
             {
-                TriggerOverwhelm("Rapid movement detected");
+                TriggerOverwhelm();
             }
-
-            _movementCount = 0;
-            _movementTimer = 0f;
+        }
+        else
+        {
+            _jerkyTimer = Mathf.Max(0, _jerkyTimer - Time.deltaTime);
         }
     }
 
-    float CalculateDirectionVariance()
+    void MonitorRecovery(float intensity)
     {
-        if (_recentMovements[0] == Vector3.zero) return 0f;
-
-        float totalVariance = 0f;
-        Vector3 avgDirection = Vector3.zero;
-
-        // Calculate average direction
-        foreach (var movement in _recentMovements)
+        if (intensity < (jerkyThreshold * 0.5f))
         {
-            avgDirection += movement;
-        }
-        avgDirection /= _recentMovements.Length;
+            _calmTimer += Time.deltaTime;
 
-        // Calculate variance from average
-        foreach (var movement in _recentMovements)
+            if (_calmTimer > recoveryTimeNeeded)
+            {
+                Recover();
+            }
+        }
+        else
         {
-            totalVariance += Vector3.Distance(movement, avgDirection);
+            _calmTimer = 0f;
         }
-
-        return totalVariance / _recentMovements.Length;
     }
 
-    void TriggerOverwhelm(string reason)
+    void TriggerOverwhelm()
     {
-        _isOverwhelmed = true;
-        Debug.Log($"Overwhelm detected: {reason}");
-        
+        IsOverwhelmed = true;
+        _calmTimer = 0f;
+        Debug.Log("Overwhelm Triggered: Movement too violent.");
         onOverwhelmDetected.Invoke();
-
-        // Start recovery monitoring
-        StartCoroutine(MonitorRecovery());
     }
 
-    System.Collections.IEnumerator MonitorRecovery()
+    void Recover()
     {
-        // Wait for calm, steady movement
-        float calmTime = 0f;
-        float requiredCalmDuration = 5f;
-
-        while (calmTime < requiredCalmDuration)
-        {
-            yield return new WaitForSeconds(1f);
-
-            // Check if movement is calm
-            float variance = CalculateDirectionVariance();
-            if (variance < erraticMovementThreshold * 0.5f && _movementCount < rapidMovementThreshold * 0.5f)
-            {
-                calmTime += 1f;
-            }
-            else
-            {
-                calmTime = 0f; // Reset if not calm
-            }
-        }
-
-        // Calm restored
-        _isOverwhelmed = false;
-        Debug.Log("Calm restored");
+        IsOverwhelmed = false;
+        _jerkyTimer = 0f;
+        Debug.Log("Calm Restored.");
         onCalmRestored.Invoke();
     }
 }
