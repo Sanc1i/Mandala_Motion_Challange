@@ -80,7 +80,7 @@ public class GamificationManager : MonoBehaviour
 
     void ShowBadgeNotification(Badge badge)
     {
-        // Create temporary notification (could be a UI panel)
+        // Create temporary notification
         Debug.Log($"🏆 Badge Earned: {badge.badgeName}");
         
         // Could instantiate a badge UI prefab here

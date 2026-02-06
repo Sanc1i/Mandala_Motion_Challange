@@ -53,7 +53,7 @@ public class RhythmManager : MonoBehaviour
         bpm = Mathf.Clamp(newBpm, 50f, 120f);
         _beatInterval = 60f / bpm;
         
-        // Adjust background music pitch slightly (subtle tempo change)
+        // Adjust background music pitch slightly
         if (backgroundMusic != null)
         {
             backgroundMusic.pitch = bpm / baseTrackBPM;

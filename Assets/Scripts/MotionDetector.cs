@@ -9,7 +9,7 @@ public class MotionDetector : MonoBehaviour
     public OverwhelmDetector overwhelmDetector;
 
     [Header("Tuning (Agitation Meter)")]
-    public float activeThreshold = 2.0f;
+    public float activeThreshold = 0.1f;
 
     private Vector3 _lastLocalPos;
     private Quaternion _lastLocalRot;

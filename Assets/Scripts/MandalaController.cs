@@ -160,7 +160,7 @@ public class MandalaController : MonoBehaviour
 
     void CheckIdleState()
     {
-        // Idle detection (no movement for 5 seconds)
+        // Idle detection
         if (Time.time - _lastInputTime > 5.0f)
         {
             // Gradually reduce intensity
